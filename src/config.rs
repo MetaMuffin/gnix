@@ -20,7 +20,10 @@ pub struct GnixConfig {
 impl ::std::default::Default for GnixConfig {
     fn default() -> Self {
         Self {
-            listen_http: Some(8080),
+            listen_http: Some(match users::get_current_uid() {
+                0 => 80,
+                _ => 8080
+            }),
             listen_https: None,
             fallback_route: GnixRoute {
                 backend_port: 8080,

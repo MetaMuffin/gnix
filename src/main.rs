@@ -20,7 +20,10 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
-    let config = confy::load::<GnixConfig>("gnix").expect("Invalid config");
+    let config = match users::get_current_uid() {
+        0 => confy::load_path("/etc/gnix/gnix.toml"),
+        _ => confy::load::<GnixConfig>("gnix")
+    }.expect("Invalid config");
     {
         *CONFIG.write().unwrap() = Some(config);
     }
