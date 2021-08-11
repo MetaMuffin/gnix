@@ -2,7 +2,6 @@
 
 A simple and fast reverse proxy.
 
-## TODO
+## Licence
 
-- Documentation
-- Everything else
+See `LICENCE` file.
