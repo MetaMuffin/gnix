@@ -22,8 +22,9 @@ lazy_static! {
 async fn main() {
     let config = match users::get_current_uid() {
         0 => confy::load_path("/etc/gnix/gnix.toml"),
-        _ => confy::load::<GnixConfig>("gnix")
-    }.expect("Invalid config");
+        _ => confy::load::<GnixConfig>("gnix"),
+    }
+    .expect("Invalid config");
     {
         *CONFIG.write().unwrap() = Some(config);
     }
@@ -104,6 +105,7 @@ async fn proxy(client: HttpClient, mut req: Request<Body>) -> Result<Response<Bo
         let new_authority = format!("{}:{}", new_host, new_port)
             .parse::<Authority>()
             .unwrap();
+        let new_path = req.uri().path_and_query().unwrap().clone();
 
         println!("[{}] {} {}", host, req.method(), path);
         println!("-> {}:{} {}", new_host, new_port, req.uri().path());
@@ -111,7 +113,7 @@ async fn proxy(client: HttpClient, mut req: Request<Body>) -> Result<Response<Bo
         *req.uri_mut() = Uri::builder()
             .authority(new_authority)
             .scheme("http")
-            .path_and_query("/index.html")
+            .path_and_query(new_path)
             .build()
             .unwrap();
     };
