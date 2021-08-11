@@ -7,22 +7,22 @@ use hyper::{header, Body, Client, Method, Request, Response, Server};
 use lazy_static::lazy_static;
 use std::convert::Infallible;
 use std::net::SocketAddr;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 pub mod config;
 pub mod helper;
 pub mod tunnel;
 
-// lazy_static! {
-//     pub static ref CONFIG: RwLock<Option<GnixConfig>> = RwLock::new(None);
-// }
+lazy_static! {
+    pub static ref CONFIG: Arc<RwLock<Option<GnixConfig>>> = Arc::new(RwLock::new(None));
+}
 
 #[tokio::main]
 async fn main() {
-    // let config = confy::load::<GnixConfig>("gnix").expect("Invalid config");
-    // {
-    //     *CONFIG.write().unwrap() = Some(config);
-    // }
+    let config = confy::load::<GnixConfig>("gnix").expect("Invalid config");
+    {
+        *CONFIG.write().unwrap() = Some(config);
+    }
     start_http().await;
 }
 
@@ -36,15 +36,18 @@ async fn start_http() {
         let client = client.clone();
         async move { Ok::<_, Infallible>(service_fn(move |req| proxy(client.clone(), req))) }
     });
-    // let config = CONFIG.read().unwrap();
-    // let config = config.as_ref().unwrap().clone();
-    // let addr = SocketAddr::from((
-    //     [0, 0, 0, 0],
-    //     config
-    //         .listen_http
-    //         .expect("For now, please specify a http port, even if you dont need it"),
-    // ));
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+
+    let port = {
+        // let config = ;
+        let config = CONFIG.read().unwrap().as_ref().unwrap().clone();
+        config
+            .listen_http
+            .expect("For now, please specify a http port, even if you dont need it")
+    };
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+
+    // let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     let server = Server::bind(&addr)
         .http1_preserve_header_case(true)
         .http1_title_case_headers(true)
@@ -63,10 +66,10 @@ async fn proxy(client: HttpClient, req: Request<Body>) -> Result<Response<Body>,
         Some(h) => h.to_str().unwrap(),
         None => return Ok(fail_request(req, "no host header").await),
     };
-    // let config = CONFIG.read().unwrap();
-    // let config = config.as_ref().unwrap();
+    let config = CONFIG.read().unwrap();
+    let config = config.as_ref().unwrap();
 
-    return Ok(fail_request(req, "request failed on purpose").await);
+    // return Ok(fail_request(req, "request failed on purpose").await);
 
     let host = host.split_once(":").unwrap_or((host, "")).0; // trim the port, if it even exists
     let path = req.uri().path();
@@ -77,7 +80,7 @@ async fn proxy(client: HttpClient, req: Request<Body>) -> Result<Response<Body>,
         proxy_tunnel(client, req).await
     } else {
         let mut proxy_req = Request::from(req);
-        // *proxy_req.uri_mut().host() = proxy_
+        // *proxy_req.uri_mut().host() = proxy;
         client.request(proxy_req).await
     }
 }
