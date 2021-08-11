@@ -17,5 +17,5 @@ build() {
 package() {
     cd "$srcdir/$pkgname"
     install -Dm 755 "target/release/gnix" "$pkgdir/usr/bin/gnix"
-    install -Dm 644 "gnix.service" "$pkgdir/usr/lib/systemd"
+    install -Dm 644 "gnix.service" "$pkgdir/usr/lib/systemd/system/gnix.service"
 }
